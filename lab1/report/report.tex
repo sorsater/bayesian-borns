@@ -1,0 +1,91 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper,textwidth=160mm,textheight=245mm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{datetime2}
+\usepackage{parskip}
+\usepackage{spverbatim}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{multirow}
+
+\graphicspath{{../}}
+\newcommand{\imgw}{0.8}
+
+\definecolor{keyword_c}{RGB}{36,123,160}
+\definecolor{comment_c}{RGB}{205,174,52}
+\definecolor{string_c}{RGB}{242,95,92}
+
+\lstset{
+  language=R,
+  basicstyle=\footnotesize,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=single,
+  rulecolor=\color{black},
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+  breakatwhitespace=false,
+  alsoletter={.},
+  keywordstyle=\color{keyword_c},
+  commentstyle=\color{comment_c},
+  stringstyle=\color{string_c},
+  otherkeywords={!,!=,~,*,\&,\%/\%,\%*\%,\%\%,<-,<<-}, % Exclude $ and _
+  morekeywords={}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+\lhead{TDDE07 Bayesian Learning}
+\rhead{\today} % yyyy-mm-dd
+\setlength{\headheight}{15pt}
+
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+
+    \vspace{0.7cm}
+    \LARGE
+    \textbf{Lab 1 Report}
+    \vspace{0.7cm}
+    \Large
+    \begin{table}[h]
+      \centering
+      \begin{tabular}{ r l }
+      Ludvig Noring & ludno249 \\
+      Michael Sörsäter & micso554 \\
+      \end{tabular}
+    \end{table}
+
+\end{center}
+
+\section{Bernoulli}
+$ y_1,\ldots,y_n | \theta \sim Bern(\theta)$
+$ s = 14, n = 20$
+
+We assume a $Beta(\alpha_0, \beta_0)$ prior for $\theta$ and $\alpha_0 = \beta_0 = 2$
+\section{Log-normal distribution and the Gini coefficient}
+\section{Bayesian inference for concen}
+% ludde
+
+% Appendix
+% \newpage
+% \pagenumbering{gobble}
+% \appendix
+% \section{Code for the assignment}
+% \texttt{
+%   \lstinputlisting{../shared/assignment1_combined.R}
+% }
+\end{document}
