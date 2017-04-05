@@ -1,27 +1,58 @@
-a = 2
-b = 2
-n = seq(2,2000,10)
-p = 0.7
-xGrid <- seq(0.001, 0.999, by=0.001)
-
+require('manipulate')
+set.seed(12345)
 col1 = '#247ba0'
 col2 = '#f25f5c'
-hej = function(n){
-  normalizedLikelihood = dbeta(xGrid, n*p+1, n*(1-p)+1)
+a = 2
+b = 2
+s = 14
+n = 20
+xGrid <- seq(0.001, 0.999, by=0.001)
+
+draw = function(nDraws){
   prior = dbeta(xGrid, a, b)
-  posterior = dbeta(xGrid, a+n*p, b+n*(1-p))
-  maxDensity <- max(normalizedLikelihood, prior, posterior) # Use to make the y-axis high enough
-  #return (c(mean(posterior), sd(posterior)))
-  return( c(mean(abs(normalizedLikelihood - posterior)),
-            abs(sd(normalizedLikelihood) - sd(posterior))) )
+  posterior = rbeta(nDraws, a+s, b+(n-s))
+  true = dbeta(xGrid, a+s, b+(n-s))
+  
+  hist(posterior, 100, prob=TRUE, col=col1, xlim=c(0,1))
+  lines(xGrid, true, col=col2, lwd=3)
+  #df = data.frame(post=posterior)
+  #ggplot(df, aes(x=posterior, y=..density..)) +
+  #  geom_histogram(binwidth = 0.005) +
+  #  geom_density()
+
 }
 
-data = sapply(n, hej)
-plot(n, data[1,], xlab='Samples', ylab='Distance', type='l', lwd=2, col=col1, ylim=c(0, max(data)))
-lines(n, data[2,], type='l', lwd=2, col=col2)
-legend('topright', c('Mean Error','Standard Deviation'), fill=c(col1, col2), inset=0.02)
+manipulate( 
+  draw(n), 
+  n = slider(1, 100000, step=1, initial=20)
+)
 
 
-n = 10000
-p = 0.7
-true = pbeta(xGrid, n*p, n*(1-p))
+##
+
+prob = function(nDraws){
+  prior = dbeta(xGrid, a, b)
+  posterior = rbeta(nDraws, a+s, b+(n-s))
+  true = pbeta(0.4, a+s, b+(n-s))
+  
+  message((sum(posterior <= 0.4) / length(posterior)) * 100)
+  message(round(true*100, 3))
+  
+}
+
+nDraws = 10000
+prob(nDraws)
+
+
+##
+
+logodds = function(nDraws){
+  prior = dbeta(xGrid, a, b)
+  posterior = rbeta(nDraws, a+s, b+(n-s))
+  phi = log(posterior / (1 - posterior))
+  hist(phi, 100, prob=TRUE, col=col1)
+  lines(density(phi), lwd=2, col=col2)
+}
+
+nDraws = 10000
+logodds(nDraws)
