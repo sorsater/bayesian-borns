@@ -1,58 +1,58 @@
-require('manipulate')
 set.seed(12345)
 col1 = '#247ba0'
 col2 = '#f25f5c'
+col3 = '#333333'
+
 a = 2
 b = 2
 s = 14
 n = 20
-xGrid <- seq(0.001, 0.999, by=0.001)
 
+xGrid <- seq(0.001, 0.999, 0.001)
+
+## 1a
 draw = function(nDraws){
-  prior = dbeta(xGrid, a, b)
-  posterior = rbeta(nDraws, a+s, b+(n-s))
-  true = dbeta(xGrid, a+s, b+(n-s))
+  sample = rbeta(nDraws, a+s, b+(n-s))
+  mean_sample = mean(sample)
+  sd_sample = sd(sample)
   
-  hist(posterior, 100, prob=TRUE, col=col1, xlim=c(0,1))
-  lines(xGrid, true, col=col2, lwd=3)
-  #df = data.frame(post=posterior)
-  #ggplot(df, aes(x=posterior, y=..density..)) +
-  #  geom_histogram(binwidth = 0.005) +
-  #  geom_density()
-
+  return (c(mean_sample, sd_sample))
 }
 
-manipulate( 
-  draw(n), 
-  n = slider(1, 100000, step=1, initial=20)
-)
+alpha = a + s
+beta = b + (n-s)
 
+intervals = seq(20,50000,100)
+data = sapply(intervals, draw)
 
-##
+true = dbeta(xGrid, a+s, b+(n-s))
+mean_true = alpha / (alpha + beta)
+sd_true = sqrt( (alpha*beta) / ((alpha+beta)^2*(alpha+beta+1)) )
 
-prob = function(nDraws){
-  prior = dbeta(xGrid, a, b)
-  posterior = rbeta(nDraws, a+s, b+(n-s))
-  true = pbeta(0.4, a+s, b+(n-s))
-  
-  message((sum(posterior <= 0.4) / length(posterior)) * 100)
-  message(round(true*100, 3))
-  
-}
+# Mean
+pdf("converge_mean.pdf")
+  plot(intervals, abs(data[1,]-mean_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
+dev.off()
 
+# SD
+pdf("converge_sd.pdf")
+  plot(intervals, abs(data[2,]-sd_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
+dev.off()
+
+## 1b
 nDraws = 10000
-prob(nDraws)
+posterior = rbeta(nDraws, a+s, b+(n-s))
+true = pbeta(0.4, a+s, b+(n-s))
 
+message((sum(posterior <= 0.4) / length(posterior)) * 100)
+message(round(true*100, 3))
 
-##
+## 1c
+nDraws = 10000
+posterior = rbeta(nDraws, a+s, b+(n-s))
+phi = log(posterior / (1 - posterior))
 
-logodds = function(nDraws){
-  prior = dbeta(xGrid, a, b)
-  posterior = rbeta(nDraws, a+s, b+(n-s))
-  phi = log(posterior / (1 - posterior))
-  hist(phi, 100, prob=TRUE, col=col1)
+pdf("phi.pdf")
+  hist(phi, 100, prob=TRUE, col=col1, border=col1, main='')
   lines(density(phi), lwd=2, col=col2)
-}
-
-nDraws = 10000
-logodds(nDraws)
+dev.off()
