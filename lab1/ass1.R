@@ -3,6 +3,9 @@ col1 = '#247ba0'
 col2 = '#f25f5c'
 col3 = '#333333'
 
+imgw = 9
+imgh = 6
+
 a = 2
 b = 2
 s = 14
@@ -30,12 +33,12 @@ mean_true = alpha / (alpha + beta)
 sd_true = sqrt( (alpha*beta) / ((alpha+beta)^2*(alpha+beta+1)) )
 
 # Mean
-pdf("converge_mean.pdf")
+pdf("plots/1-converge_mean.pdf", width=imgw, height=imgh)
   plot(intervals, abs(data[1,]-mean_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
 dev.off()
 
 # SD
-pdf("converge_sd.pdf")
+pdf("plots/1-converge_sd.pdf", width=imgw, height=imgh)
   plot(intervals, abs(data[2,]-sd_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
 dev.off()
 
@@ -52,7 +55,7 @@ nDraws = 10000
 posterior = rbeta(nDraws, a+s, b+(n-s))
 phi = log(posterior / (1 - posterior))
 
-pdf("phi.pdf")
-  hist(phi, 100, prob=TRUE, col=col1, border=col1, main='')
+pdf("plots/1-phi.pdf", width=imgw, height=imgh)
+  hist(phi, 100, prob=TRUE, col=col1, border=col1, main='', xlab=expression(phi))
   lines(density(phi), lwd=2, col=col2)
 dev.off()

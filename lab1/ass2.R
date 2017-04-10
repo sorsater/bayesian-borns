@@ -24,7 +24,7 @@ exp_part = exp( ((-n*tausq) / (2*s)) ) / (s^(1+n/2))
 constant = ((tausq * n/2)^(n/2)) / (factorial(n/2-1))
 CDF = constant * exp_part
 
-pdf('plots/chi-squared.pdf', width=imgw, height=imgh)
+pdf('plots/2-chi-squared.pdf', width=imgw, height=imgh)
   hist(sigmasq, 500, col=col1, border=col1, main='', freq=FALSE, xlim=c(0,1.5))
   # Dependent on geoR
   #lines(s, dinvchisq(s, n, tausq), col=col2, lwd=3)
@@ -34,16 +34,10 @@ pdf('plots/chi-squared.pdf', width=imgw, height=imgh)
 dev.off()
 
 ## 2.b Gini
-G = function(sigmasq) {
-  return (2 * ecdf(sqrt(sigmasq/2)) - 1)
-}
-
-#sapply(sigmasq, G)
-
 vals = sqrt(sigmasq/2)
-G = 2*pnorm(vals)-1
+G = 2 * pnorm(vals) - 1
 
-pdf('plots/g.pdf', width=imgw, height=imgh)
-  hist(G, 100, col=col1, border=col1)
+pdf('plots/2-g.pdf', width=imgw, height=imgh)
+  hist(G, 100, col=col1, border=col1, main='')
 dev.off()
 
