@@ -3,8 +3,8 @@ col1 = '#247ba0'
 col2 = '#f25f5c'
 col3 = '#333333'
 
-imgw = 9
-imgh = 6
+imgw = 5
+imgh = 4
 
 a = 2
 b = 2
@@ -34,12 +34,14 @@ sd_true = sqrt( (alpha*beta) / ((alpha+beta)^2*(alpha+beta+1)) )
 
 # Mean
 pdf("plots/1-converge_mean.pdf", width=imgw, height=imgh)
-  plot(intervals, abs(data[1,]-mean_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
+  plot(intervals, abs(data[1,]-mean_true), type='l', col=col3,
+    xlab = 'nDraws', ylab='Absolute error')
 dev.off()
 
 # SD
 pdf("plots/1-converge_sd.pdf", width=imgw, height=imgh)
-  plot(intervals, abs(data[2,]-sd_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
+  plot(intervals, abs(data[2,]-sd_true), type='l', col=col3, 
+    xlab = 'nDraws', ylab='Absolute error')
 dev.off()
 
 ## 1b

@@ -1,7 +1,7 @@
 ---
 title: "Lab1 Report"
 author: "Ludvig Noring, Michael Sörsäter"
-date: "April 10, 2017"
+date: "April 11, 2017"
 
 output:
   pdf_document:
@@ -29,8 +29,7 @@ This can be compared with the theoretical value $0.397 \%$.
 With just so few as 10 000 draws we get a probability close to the exact value.
 
 ### (c)
-It is easy to compute the log-odds of the posterior distribution.
-The plot is seen in Figure 3.  
+When using simulation it is easy to compute the log-odds of the posterior distribution. The plot is seen in Figure 3..  
 
 ![Log-odds](plots/1-phi.pdf)
 
@@ -47,10 +46,16 @@ We calculate the Gini coefficient for different values of $\sigma$ and plot the 
 ![Gini coefficient](plots/2-g.pdf)
 
 ### (c)
-TODO
+The equal tails interval and highest posterior density interval are computed from the draws in 2b.
+The density have a very long right tail which influence the equal tail interval.
+Therefore the highest posterior density seems to fit the data better. 
+The plot with the credible intervals can be seen in Figure 6.
+
+![Credible intervals](plots/2-credible-intervals.pdf)
 
 ## 3. Von Mises distribution
-The posterior distribution is calculated by multiplying the individual observations together with the prior for a fine grid of $\kappa$ values. The mode is calculated for the posterior. The plot can be found in Figure 6.
+The posterior distribution is calculated by multiplying the individual observations together with the prior for a fine grid of $\kappa$ values. The mode is calculated for the posterior. The plot can be found in Figure 7.
+
 ![Von Mises distribution](plots/3-posterior-distribution.pdf)
 
 $\pagebreak$
@@ -58,19 +63,13 @@ $\pagebreak$
 # Appendix A - Code for assignment 1
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
-a = c(1,23)
-
-```
-
-$\pagebreak$
-
-# Appendix B - Code for assignment 2
-
-```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
 set.seed(12345)
 col1 = '#247ba0'
 col2 = '#f25f5c'
 col3 = '#333333'
+
+imgw = 5
+imgh = 4
 
 a = 2
 b = 2
@@ -99,13 +98,15 @@ mean_true = alpha / (alpha + beta)
 sd_true = sqrt( (alpha*beta) / ((alpha+beta)^2*(alpha+beta+1)) )
 
 # Mean
-pdf("converge_mean.pdf")
-  plot(intervals, abs(data[1,]-mean_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
+pdf("plots/1-converge_mean.pdf", width=imgw, height=imgh)
+  plot(intervals, abs(data[1,]-mean_true), type='l', col=col3,
+    xlab = 'nDraws', ylab='Absolute error')
 dev.off()
 
 # SD
-pdf("converge_sd.pdf")
-  plot(intervals, abs(data[2,]-sd_true), type='l', col=col3, xlab = 'nDraws', ylab='Absolute error')
+pdf("plots/1-converge_sd.pdf", width=imgw, height=imgh)
+  plot(intervals, abs(data[2,]-sd_true), type='l', col=col3, 
+    xlab = 'nDraws', ylab='Absolute error')
 dev.off()
 
 ## 1b
@@ -121,12 +122,86 @@ nDraws = 10000
 posterior = rbeta(nDraws, a+s, b+(n-s))
 phi = log(posterior / (1 - posterior))
 
-pdf("phi.pdf")
-  hist(phi, 100, prob=TRUE, col=col1, border=col1, main='')
+pdf("plots/1-phi.pdf", width=imgw, height=imgh)
+  hist(phi, 100, prob=TRUE, col=col1, border=col1, main='', xlab=expression(phi))
   lines(density(phi), lwd=2, col=col2)
+dev.off()
+```
+
+$\pagebreak$
+
+# Appendix B - Code for assignment 2
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+col1 = '#247ba0'
+col2 = '#f25f5c'
+col3 = '#333333'
+imgw = 5
+imgh = 4
+
+mu = 3.5
+obs = c(14, 25, 45, 25, 30, 33, 19, 50, 34, 67)
+n = length(obs)
+
+tausq = sum((log(obs) - mu)^2) / (n)
+
+chiDraw = function(nDraws){
+  draws = rchisq(nDraws, n)
+  sigmasq = n * tausq / draws
+  return (sigmasq)
+}
+
+nDraws = 10000
+sigmasq = chiDraw(nDraws)
+
+s = seq(0, 1.5, length.out = 1000)
+exp_part = exp( ((-n*tausq) / (2*s)) ) / (s^(1+n/2))
+constant = ((tausq * n/2)^(n/2)) / (factorial(n/2-1))
+CDF = constant * exp_part
+
+pdf('plots/2-chi-squared.pdf', width=imgw, height=imgh)
+  hist(sigmasq, 500, col=col1, border=col1, main='', freq=FALSE, xlim=c(0,1.5))
+  lines(s, CDF, col=col2, lwd=2)
+  legend('topright', c('Draws', 'True'), fill=c(col1, col2))
+dev.off()
+
+## 2.b Gini
+vals = sqrt(sigmasq/2)
+G = 2 * pnorm(vals) - 1
+
+pdf('plots/2-g.pdf', width=imgw, height=imgh)
+  hist(G, 100, col=col1, border=col1, main='')
 dev.off()
 
 
+## 2.c Credible Intervals
+
+# Equal tail interval
+x_eti = quantile(G, probs=c(0.025, 0.975))
+
+# Highest Posterior Density
+dg = density(G)
+ordered_x = dg$x[order(-dg$y)]
+ordered_y = dg$y[order(-dg$y)]
+  
+cur = 0
+for(i in 1:length(dg$y)){
+  cur = cur + ordered_y[i]
+  if(cur / sum(dg$y) >= 0.95){
+    break
+  }
+}
+x_hpd = c(min(ordered_x[1:i]), max(ordered_x[1:i]))
+
+pdf('plots/2-credible-intervals.pdf', width=imgw, height=imgh)
+  plot(dg, col=col3, lwd=2, main="")
+  lines(x_eti, rep(0.12, 2), col=col1, lwd=4)
+  lines(x_hpd, rep(0.02, 2), col=col2, lwd=4)
+  legend("topright", 
+         legend = c("Equal Tail Interval","Highest Posterior Density"),
+         fill = c(col1, col2),
+         inset = 0.02)
+dev.off()
 ```
 
 $\pagebreak$
@@ -134,8 +209,52 @@ $\pagebreak$
 # Appendix C - Code for assignment 3
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
-a = c(1,23)
-print('hej')
+col1 = '#247ba0'
+col2 = '#f25f5c'
+imgw = 5
+imgh = 4
 
+y = c(-2.44, 2.14, 2.54, 1.83, 2.02, 2.33, -2.79, 2.23, 2.07, 2.02)
+mu = 2.39
+
+von_misen = function(y, kappa, mu){
+  I_zero = besselI(x=kappa, nu=0)
+  numerator = exp(kappa * cos(y - mu))
+  return (numerator / (2 * pi * I_zero))
+}
+
+exponential = function(kappa, lambda=1){
+  return (lambda * exp(-lambda*kappa))
+}
+
+calculate_posterior = function(y, kappa, mu) {
+  prior = exponential(kappa)
+  likelihood = prod(von_misen(y, kappa, mu))
+  return (prior * likelihood)
+}
+
+# To calculate the mode
+get_mode = function(vec, kappas) {
+  vec = round(vec, 10)
+  uniqv = unique(vec)
+  mode = uniqv[which.max(tabulate(match(vec, uniqv)))]
+  
+  mode_idx = which(vec == mode)[1]
+  mode_x = kappas[mode_idx]
+  
+  return (mode_x)
+}
+
+kappas = seq(0, 6, 0.001)
+
+posterior = sapply(kappas, calculate_posterior, y=y, mu=mu)
+mode = get_mode(posterior, kappas)
+
+pdf("plots/3-posterior-distribution.pdf", width=imgw, height=imgh)
+  plot(kappas, posterior, type='l', lwd=2, col=col1,
+       xlab=expression(kappa), ylab="Density")
+  abline(v=mode, col=col2, lwd=2)
+  legend('topright', c('Posterior of k', 'Mode'), fill=c(col1, col2), inset=0.02)
+dev.off()
 ```
 

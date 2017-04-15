@@ -1,8 +1,8 @@
 col1 = '#247ba0'
 col2 = '#f25f5c'
 col3 = '#333333'
-imgw = 9
-imgh = 6
+imgw = 5
+imgh = 4
 
 mu = 3.5
 obs = c(14, 25, 45, 25, 30, 33, 19, 50, 34, 67)
@@ -59,7 +59,7 @@ for(i in 1:length(dg$y)){
 x_hpd = c(min(ordered_x[1:i]), max(ordered_x[1:i]))
 
 pdf('plots/2-credible-intervals.pdf', width=imgw, height=imgh)
-  plot(dg, col=col3, lwd=2)
+  plot(dg, col=col3, lwd=2, main="")
   lines(x_eti, rep(0.12, 2), col=col1, lwd=4)
   lines(x_hpd, rep(0.02, 2), col=col2, lwd=4)
   legend("topright", 

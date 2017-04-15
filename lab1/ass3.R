@@ -1,7 +1,7 @@
 col1 = '#247ba0'
 col2 = '#f25f5c'
-imgw = 9
-imgh = 6
+imgw = 5
+imgh = 4
 
 y = c(-2.44, 2.14, 2.54, 1.83, 2.02, 2.33, -2.79, 2.23, 2.07, 2.02)
 mu = 2.39
@@ -40,7 +40,8 @@ posterior = sapply(kappas, calculate_posterior, y=y, mu=mu)
 mode = get_mode(posterior, kappas)
 
 pdf("plots/3-posterior-distribution.pdf", width=imgw, height=imgh)
-  plot(kappas, posterior, type='l', lwd=2, col=col1, xlab=expression(kappa), ylab="Density")
+  plot(kappas, posterior, type='l', lwd=2, col=col1,
+       xlab=expression(kappa), ylab="Density")
   abline(v=mode, col=col2, lwd=2)
   legend('topright', c('Posterior of k', 'Mode'), fill=c(col1, col2), inset=0.02)
 dev.off()
