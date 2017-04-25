@@ -1,0 +1,21 @@
+---
+title: "Lab2 Report"
+author: "Ludvig Noring, Michael Sörsäter"
+date: "April 11, 2017"
+
+output:
+  pdf_document:
+    fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## 1. Bernoulli
+
+```{r, echo=TRUE, eval=FALSE}
+
+```
+
