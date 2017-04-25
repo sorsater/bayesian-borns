@@ -13,7 +13,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-## 1. Bernoulli
+## 1. Linear and polynomial regression
+### a & b
+We tired to reason about the hyperparameters. After simulating draws from the model we updated the hyperparameters and ended up with the following values. The resulting regression curves can be seen in Figure 1.
+$$ \mu_0 = (-10, 100, -100) $$
+$$ \Omega_0 = I $$
+$$ v_0 = 366 - 3 = 363 $$
+$$ \sigma_0^2 = 5 $$
+
+![Regression curves](plots/hyper.pdf)
 
 ```{r, echo=TRUE, eval=FALSE}
 
