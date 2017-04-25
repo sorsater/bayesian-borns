@@ -1,7 +1,7 @@
 ---
 title: "Lab2 Report"
 author: "Ludvig Noring, Michael Sörsäter"
-date: "April 11, 2017"
+date: "April 26, 2017"
 
 output:
   pdf_document:
@@ -13,9 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-## 1. Linear and polynomial regression
-### a & b
-We tired to reason about the hyperparameters. After simulating draws from the model we updated the hyperparameters and ended up with the following values. The resulting regression curves can be seen in Figure 1.
+# 1. Linear and polynomial regression
+## a & b
+We tried to reason about the hyperparameters. After simulating draws from the model we updated the hyperparameters and ended up with the following values. The resulting regression curves can be seen in Figure 1.
 $$ \mu_0 = (-10, 100, -100) $$
 $$ \Omega_0 = I $$
 $$ v_0 = 366 - 3 = 363 $$
@@ -23,7 +23,82 @@ $$ \sigma_0^2 = 5 $$
 
 ![Regression curves](plots/hyper.pdf)
 
-```{r, echo=TRUE, eval=FALSE}
+The temperature starts at around $-10^{\circ}C$ and reaches its peak in the middle of the year at $20^{\circ}C$ and finally ends at the same starting value $-10^{\circ}C$.
 
+![Scatter plot with credible intervals](plots/posterior.pdf)
+
+
+# 2. Posterior approximation for classification with logistic regression 
+## a
+
+
+## b
+We used the function optim to find optimal values for $\tilde{\beta}$ and $J_y^{-1}(\tilde{\beta})$.
+The result can be show in the tables below.
+
+``` {r, echo=FALSE, eval=FALSE}
+require('mvtnorm')
+imgw = 5
+imgh = 4
+data = read.table('/home/michael/kurser/tdde07-bayesian/bayesian-borns/lab2/WomenWork.dat.txt', header=TRUE)
+response = data$Work
+features = as.matrix(data[,-data$Work])
+# b
+nFeats = ncol(features)
+mu = rep(0, nFeats)
+tau = 10
+sigma2 = tau^2 * diag(nFeats)
+beta_prior = rnorm(mu, sigma2)
+
+logPostLogistic = function(betas, y, X, mu, sigma2) {
+  nPara = length(betas)
+  yPred = as.matrix(X) %*% betas
+  
+  logLike = sum(yPred*y - log(1 + exp(yPred)))
+  if (abs(logLike) == Inf) {
+    logLike = -20000
+  }
+  logPrior = dmvnorm(betas, rep(0, nPara), sigma2, log=TRUE)
+  logPost = logPrior + logLike
+  return (logPost)
+}
+
+initValues = rep(0, nFeats)
+optimResults = optim(initValues,
+                     logPostLogistic, y=response, X=features, mu=mu, sigma2=sigma2,
+                     method=c('BFGS'), control=list(fnscale=-1), hessian=TRUE)
+
+postMode = optimResults$par
+postCov = -solve(optimResults$hessian)
+postMode
+postCov
+
+```
+
+
+||||
+|---|--|--|
+|a|b|c|
+|d|e|f|
+
+
+![Equal Tail intervals for NSmallChild](plots/smallchildren.pdf)
+
+
+$\pagebreak$
+
+# Appendix A - Code for assignment 1
+
+```{r, echo=TRUE, eval=FALSE}
+a = 3
+```
+
+
+$\pagebreak$
+
+# Appendix B - Code for assignment 2
+
+```{r, echo=TRUE, eval=FALSE}
+a = 2
 ```
 

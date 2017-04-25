@@ -2,8 +2,8 @@ require('polynom')
 require('MASS')
 require('geoR')
 set.seed(1234567890)
-imgw = 5
-imgh = 4
+imgw = 7
+imgh = 6
 
 data = read.table('TempLinkoping2016.txt', header=TRUE)
 n = nrow(data)
@@ -58,7 +58,7 @@ print(betas_mean)
 ci = apply(betas, 1, quantile, probs=c(0.05, 0.95))
 
 cols = c('dodgerblue', 'firebrick', 'forestgreen')
-pdf('plots/hyper.pdf', width=imgw, height=imgh)
+pdf('plots/posterior.pdf', width=imgw, height=imgh)
   plot(data, pch=20, cex=0.3, xlab='Time of year', ylab='Temperature')
   lines(data$time, predict(polynomial(betas_mean), data$time), col=cols[1], lwd=2)
   lines(data$time, predict(polynomial(ci[1,]), data$time), col=cols[2], lwd=2)
@@ -71,5 +71,6 @@ dev.off()
 hot_day = data$time[which.max(predict(polynomial(betas_mean), data$time))]
 hot_day = as.numeric(betas_mean[2] / (-betas_mean[3]*2))
 hot_date = as.Date(hot_day*n, origin="2016-01-01")
+hot_date
 
 # e
