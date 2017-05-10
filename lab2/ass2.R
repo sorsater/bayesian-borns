@@ -1,4 +1,5 @@
 require('mvtnorm')
+require('LaplacesDemon')
 imgw = 5
 imgh = 4
 data = read.table('WomenWork.dat.txt', header=TRUE)
@@ -44,14 +45,32 @@ childMean = postMode['NSmallChild']
 childStd = approxPostStd['NSmallChild']
 
 betaGrid = seq(-abs(childMean - 4*childStd), abs(childMean + 4* childStd), length = 1000)
-pdf('plots/smallchildren.pdf', width=imgw, height=imgh)
-plot(betaGrid, dnorm(betaGrid, childMean, childStd), 
-     type = "l", lwd = 2, ylab = '', xlab = expression(beta), col='steelblue')
 
-lines(qnorm(c(0.025, 0.975), childMean, childStd), c(0,0), lwd=2, col='tomato')
+pdf('plots/smallchildren.pdf', width=imgw, height=imgh)
+  plot(betaGrid, dnorm(betaGrid, childMean, childStd), 
+       type = "l", lwd = 2, ylab = '', xlab = expression(beta), col='steelblue')
+  lines(qnorm(c(0.025, 0.975), childMean, childStd), c(0,0), lwd=2, col='tomato')
+  legend('topright', legend=c('95% equal tail interval'), fill=c('tomato'), inset=0.02, cex=0.6)
 dev.off()
 # c
-jane_doe = c(1, 10, 8, 10, 1, 40, 1, 1)
-dmvnorm(jane_doe, mean=postMode, sigma=postCov+diag(8))
 
+inverseLogit = function(betas, features){
+  return (exp(features %*% betas) / (1 + exp(features %*% betas)))
+}
+
+jane_doe = c(1, 10, 8, 10, 1, 40, 1, 1)
+betas = rmvnorm(1000, mean=postMode, sigma=postCov)
+
+p = apply(betas, 1, inverseLogit, features=jane_doe)
+y = sapply(p, rbern, n=1)
+
+h = hist(y, breaks=2, plot=FALSE)
+h$counts = h$counts / sum(h$counts)
+h$counts = h$counts * 100
+names(h$counts) = h$counts
+
+pdf('plots/working.pdf', width=imgw, height=imgh)
+  barplot(h$counts, ylab='Confidence', ylim=c(0,100), col=c('tomato', 'dodgerblue'), 
+          main='', legend=c('Not working', 'Working'))
+dev.off()
 

@@ -9,11 +9,8 @@ data = read.table('TempLinkoping2016.txt', header=TRUE)
 n = nrow(data)
 
 # a
-#plot(data$time, data$temp, pch=20)
-
-#quad = lm(temp ~ time + I(time^2), data=data)
-
-#coefs = polynomial(c(quad$coefficients))
+quad = lm(temp ~ time + I(time^2), data=data)
+coefs = polynomial(c(quad$coefficients))
 
 #plot(data$time, data$temp, pch=20)
 #lines(data$time, predict(coefs, data$time))
@@ -57,19 +54,28 @@ print(betas_mean)
 
 ci = apply(betas, 1, quantile, probs=c(0.05, 0.95))
 
-cols = c('dodgerblue', 'firebrick', 'forestgreen')
-pdf('plots/hyper.pdf', width=imgw, height=imgh)
-  plot(data, pch=20, cex=0.3, xlab='Time of year', ylab='Temperature')
-  lines(data$time, predict(polynomial(betas_mean), data$time), col=cols[1], lwd=2)
-  lines(data$time, predict(polynomial(ci[1,]), data$time), col=cols[2], lwd=2)
-  lines(data$time, predict(polynomial(ci[2,]), data$time), col=cols[3], lwd=2)
+cols = c('forestgreen', 'dodgerblue', 'tomato')
+pdf('plots/posterior.pdf', width=imgw, height=imgh)
+  plot(data, pch=20, cex=0.3, xlab='Time of year', ylab='Temperature', xaxt='n')
+  lines(data$time, predict(polynomial(ci[2,]), data$time), col=cols[1], lwd=2)
+  lines(data$time, predict(polynomial(betas_mean), data$time), col=cols[2], lwd=2)
+  lines(data$time, predict(polynomial(ci[1,]), data$time), col=cols[3], lwd=2)
   legend('topleft', inset=0.02,
-         legend = c('Posterior Mean', '5% interval', '95% interval'),
-         fill = cols)
+         legend = c('95% interval', 'Posterior Mean','5% interval'),
+         fill = cols, cex=0.65)
+  axis(1, at=c(seq(0,1,length=12)), 
+       labels=c('Jan', 'Feb','Mar', 'Apr','May', 'Jun','Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'), cex=0.4)
 dev.off()
 # d
 hot_day = data$time[which.max(predict(polynomial(betas_mean), data$time))]
+hot_day
 hot_day = as.numeric(betas_mean[2] / (-betas_mean[3]*2))
+hot_day
 hot_date = as.Date(hot_day*n, origin="2016-01-01")
+hot_date
 
-# e
+xGrid = seq(0,1,0.001)
+a = dnorm(xGrid, mean=hot_day, sd=0.1)
+tjo = max(a)
+plot(as.Date(xGrid*n, origin="2016-01-01"),a, type='l')
+abline(h=tjo/2)
