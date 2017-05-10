@@ -1,0 +1,45 @@
+---
+title: "Lab3 Report"
+author: "Ludvig Noring & Michael Sörsäter"
+date: "10 May 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Rainfall
+
+### a) Normal model
+
+A Gibbs sampler is implemented that simulates from the joint posterior and after 2500 iterations the mean and variance converges. The result can be shown in Figure 1 and Figure 2.
+
+$$ \mu|\sigma^2, x \sim N(\mu_n, \tau^2_n) $$
+$$ \sigma^2|\mu, x \sim Inv-\chi^2 \left( v_n, \frac{v_0\sigma^2_0 + \sum_{i=1}^n (x_i-\mu)^2}{n+v_0}\right) $$
+
+![Convergence of the Mean](plots/mu.pdf)
+
+![Convergence of the Variance](plots/sigma.pdf)
+
+### b) Mixture normal model
+We use the provided code and modified it to suite our model.
+We updated the $\mu$ hyperparameters to:
+
+  $\mu_1 =$ mode of the density
+  
+  $\mu_2 =$ mean of the data
+
+The convergence of the mean and variance can be shown in Figure 3 and Figure 4.
+
+![Convergence of the Mean](plots/muMixed.pdf)
+
+![Convergence of the Variance](plots/sigmaMixed.pdf)
+
+### c)
+The density from the original data together with the densities from a and b are shown in Figure 5.
+It is clear that the mixture model fits the data much more accurately.
+
+![Mixture of normals](plots/mixture.pdf)
+
+## 2 Probit regression
