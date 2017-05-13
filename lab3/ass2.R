@@ -1,32 +1,33 @@
 require('msm')
 require('mvtnorm')
 
-imgw = 5
-imgh = 4
 data = read.table('WomenWork.dat.txt', header=TRUE)
 Y = data$Work
 X = as.matrix(data[,-data$Work])
 nObs = nrow(X)
-
 nFeats = ncol(X)
-mu_0 = 0
-tau = 10
-mu_0 = rep(0, nFeats)
-omega_0 = tau^2 * diag(nFeats)
-beta_prior = as.matrix(rnorm(n=nFeats, mean=mu_0, sd=sqrt(diag(omega_0))))
+
+# Calculate the accuracy of the beta values
+performance = function(betas){
+  y_hat = as.vector(X %*% betas)
+  y_hat = sign(y_hat)
+  y_hat[y_hat==-1] = 0
+  
+  print(table(y_hat, Y))
+  print(mean(y_hat != Y))
+}
 
 uGenerator = function(betas) {
-  mean = X %*% t(betas)
+  curMean = X %*% t(betas)
   u = rep(0, nObs)
   for(i in 1:nObs){
-    # Define bounds
-    if (Y[1] == 0){
+    # Define bounds = (lower, upper)
+    if(Y[i] == 0){
       bounds = c(-Inf, 0)
-    }
-    else{
+    }else{
       bounds = c(0, Inf)
     }
-    u[i] = rtnorm(n=1, mean=mean[i], sd=1, lower=bounds[1], upper=bounds[2])
+    u[i] = rtnorm(n=1, mean=curMean[i], sd=1, lower=bounds[1], upper=bounds[2])
   }
   return(u)
 }
@@ -44,8 +45,15 @@ betaGenerator = function(u, sigma2=1) {
 }
 
 # Initial values
+mu_0 = 0
+tau = 10
+mu_0 = rep(0, nFeats)
+omega_0 = tau^2 * diag(nFeats)
+beta_prior = as.matrix(rnorm(n=nFeats, mean=mu_0, sd=sqrt(diag(omega_0))))
 u = uGenerator(t(beta_prior))
-draws = 500
+
+draws = 10000
+# One column for each beta parameter
 result_beta = matrix(0, draws, nFeats)
 for(i in 1:draws) {
   print(i)
@@ -54,28 +62,15 @@ for(i in 1:draws) {
   result_beta[i,] = beta
 }
 
-colnames(result_beta) = colnames(X)
-# Posterior mean for beta
-res = t(as.matrix(apply(result_beta, 2, mean)))
-res
-
+performance(colMeans(result_beta))
 
 # c
-nFeats = ncol(X)
-mu = rep(0, nFeats)
-tau = 10
-sigma2 = tau^2 * diag(nFeats)
-beta_prior = rnorm(1, mu, sigma2)
 
-
-logPostProbit <- function(betas, y, X, mu, sigma2) {
-  nPara = length(betas)
+logPostProbit <- function(betas, y, X) {
   yPred = as.matrix(X) %*% betas
   
   logLike = sum(y*pnorm(yPred, log.p = TRUE) + (1-y)*pnorm(yPred, log.p = TRUE, lower.tail = FALSE))
-  
-  # evaluating the prior
-  logPrior = dmvnorm(betas, matrix(0, nPara, 1), sigma2, log=TRUE);
+  logPrior = dmvnorm(betas, mu_0, omega_0, log=TRUE);
   
   # add the log prior and log-likelihood together to get log posterior
   return(logLike + logPrior)
@@ -84,29 +79,45 @@ logPostProbit <- function(betas, y, X, mu, sigma2) {
 
 initValues = rep(0, nFeats)
 optimResults = optim(initValues,
-                     logPostProbit, y=Y, X=X, mu=mu, sigma2=sigma2,
+                     logPostProbit, y=Y, X=X,
                      method=c('BFGS'), control=list(fnscale=-1), hessian=TRUE)
 
 postMode = optimResults$par
 postCov = -solve(optimResults$hessian)
-approxPostStd = sqrt(diag(postCov))
+approxPostStd = sqrt(diag(postCov)/nFeats)
 
-names(postMode) = colnames(X)
-names(approxPostStd) = colnames(X)
-
+performance(postMode)
 
 pdf('plots/betas.pdf')
-par(mfrow=c(4,2))
-for(i in 1:ncol(X)) {
-  betaGrid = seq(min(result_beta[,i]), max(result_beta[,i]), length = 1000)
-  approx_density = dnorm(betaGrid, postMode[i], approxPostStd[i])
-  gibbs_density = hist(result_beta[,i], breaks=30, plot=FALSE)
+  par(mfrow=c(4,2))
+  for(i in 1:nFeats) {
+    mean = postMode[i]
+    sd = approxPostStd[i]
   
-  plot(gibbs_density,
-       #xlim=qnorm(c(0.05, 0.95), postMode[i], approxPostStd[i]),
-       ylim=c(0, max(approx_density*sum(gibbs_density$counts), gibbs_density$counts)),
-       xlab=colnames(X)[i], col='dodgerblue'
-       )
-  lines(betaGrid, approx_density*sum(gibbs_density$counts), col='tomato')
-}
+    # Remove outliers. (2 < x < 98) %
+    draws = result_beta[,i]
+    threshold = 0.02
+    bounds = quantile(draws, probs=c(threshold, 1 - threshold))
+    draws = draws[draws > bounds[1]]
+    trimmed = draws[draws < bounds[2]]
+    
+    # Toggle to include/exclude outliers
+    values = result_beta[,i]
+    values = trimmed
+    
+    xRange = c(values, mean + sd * 4, mean - sd * 4)
+    betaGrid = seq(min(xRange), max(xRange), length=1000)
+    
+    gibbs_density = hist(values, breaks=50, plot=FALSE)
+    approx_density = dnorm(betaGrid, mean=mean, sd=sd)
+    
+    yMax = max(c(approx_density, gibbs_density$density))
+    
+    plot(gibbs_density, freq=FALSE, col='dodgerblue', border='dodgerblue',
+         xlim=c(min(betaGrid), max(betaGrid)), 
+         ylim=c(0, yMax),
+         xlab=substitute(beta[idx], list(idx=i)),
+         main=colnames(X)[i])
+    lines(betaGrid, approx_density, col='tomato', lwd=2)
+  }
 dev.off()
