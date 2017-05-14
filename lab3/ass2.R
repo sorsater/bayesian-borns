@@ -1,7 +1,7 @@
 require('msm')
 require('mvtnorm')
 
-data = read.table('WomenWork.dat.txt', header=TRUE)
+data = read.table('WomenWork.dat', header=TRUE)
 Y = data$Work
 X = as.matrix(data[,-data$Work])
 nObs = nrow(X)
@@ -52,6 +52,7 @@ omega_0 = tau^2 * diag(nFeats)
 beta_prior = as.matrix(rnorm(n=nFeats, mean=mu_0, sd=sqrt(diag(omega_0))))
 u = uGenerator(t(beta_prior))
 
+# Necessary with 1000 iterations, draws more to get smoother histograms
 draws = 10000
 # One column for each beta parameter
 result_beta = matrix(0, draws, nFeats)
@@ -66,7 +67,7 @@ performance(colMeans(result_beta))
 
 # c
 
-logPostProbit <- function(betas, y, X) {
+logPostProbit = function(betas, y, X) {
   yPred = as.matrix(X) %*% betas
   
   logLike = sum(y*pnorm(yPred, log.p = TRUE) + (1-y)*pnorm(yPred, log.p = TRUE, lower.tail = FALSE))
@@ -121,3 +122,4 @@ pdf('plots/betas.pdf')
     lines(betaGrid, approx_density, col='tomato', lwd=2)
   }
 dev.off()
+
