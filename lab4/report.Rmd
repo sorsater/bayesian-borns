@@ -1,0 +1,21 @@
+---
+title: "Lab4 Report"
+author: "Ludvig Noring, Michael Sörsäter"
+date: "May 14, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Poisson regression 
+
+
+$\pagebreak$
+
+# Appendix - Code for the assignment
+
+```{r, echo=TRUE, eval=FALSE}
+
+```
