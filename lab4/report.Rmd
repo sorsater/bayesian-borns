@@ -10,6 +10,25 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Poisson regression 
+### a
+Maximum likelihood estimation is performed with the generalized model using the family poisson.
+The result can be shown in the following table.
+
+``` {r results='asis', echo=FALSE}
+library(xtable)
+ebay = read.table('/home/michael/kurser/tdde07-bayesian/bayesian-borns/lab4/eBayNumberOfBidderData.dat', header = TRUE)
+glmModel = glm(nBids ~ 0 + ., data=ebay, family=poisson)
+coefs = glmModel$coefficients
+
+options(xtable.comment = FALSE)
+print(xtable(t(as.matrix(coefs)), caption='Coefficients', digits=c(4)), type='latex')
+```
+
+The covarities that significantly influence the response are VerifyID, Sealed, MinBidShare.
+
+
+### b
+
 
 
 $\pagebreak$
