@@ -9,8 +9,8 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Poisson regression 
-### a
+# Poisson regression 
+## a
 Maximum likelihood estimation is performed with the generalized model using the family poisson.
 The result can be shown in the following table.
 
@@ -18,18 +18,28 @@ The result can be shown in the following table.
 library(xtable)
 ebay = read.table('/home/michael/kurser/tdde07-bayesian/bayesian-borns/lab4/eBayNumberOfBidderData.dat', header = TRUE)
 glmModel = glm(nBids ~ 0 + ., data=ebay, family=poisson)
-coefs = glmModel$coefficients
+glm_coefs = glmModel$coefficients
 
 options(xtable.comment = FALSE)
-print(xtable(t(as.matrix(coefs)), caption='Coefficients', digits=c(4)), type='latex')
+print(xtable(t(as.matrix(glm_coefs)), caption='Coefficients for glm', digits=c(4)), type='latex')
 ```
 
 The covarities that significantly influence the response are VerifyID, Sealed, MinBidShare.
 
+## b
+We implemented the log posterior method for the Poisson model. This produced similar results to what we got with glm.
+The result can be shown in the following table.
 
-### b
+``` {r results='asis', echo=FALSE}
+library(xtable)
+opt_coefs = c(1.06984118, -0.02051246, -0.39300599,  0.44355549, -0.05246627, -0.22123840,  0.07069683, -0.12021767, -1.89198501)
+names(opt_coefs) = names(glm_coefs)
 
+options(xtable.comment = FALSE)
+print(xtable(t(as.matrix(opt_coefs)), caption='Coefficients for optim', digits=c(4)), type='latex')
+```
 
+## c
 
 $\pagebreak$
 
