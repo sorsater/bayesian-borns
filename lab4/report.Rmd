@@ -1,7 +1,7 @@
 ---
 title: "Lab4 Report"
 author: "Ludvig Noring, Michael Sörsäter"
-date: "May 14, 2017"
+date: "May 17, 2017"
 output: pdf_document
 ---
 
@@ -10,13 +10,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Poisson regression 
-## a
+## a)
 Maximum likelihood estimation is performed with the generalized model using the family poisson.
 The result can be shown in the following table.
 
 ``` {r results='asis', echo=FALSE}
 library(xtable)
-ebay = read.table('/home/michael/kurser/tdde07-bayesian/bayesian-borns/lab4/eBayNumberOfBidderData.dat', header = TRUE)
+ebay = read.table('eBayNumberOfBidderData.dat', header = TRUE)
 glmModel = glm(nBids ~ 0 + ., data=ebay, family=poisson)
 glm_coefs = glmModel$coefficients
 
@@ -24,9 +24,9 @@ options(xtable.comment = FALSE)
 print(xtable(t(as.matrix(glm_coefs)), caption='Coefficients for glm', digits=c(4)), type='latex')
 ```
 
-The covarities that significantly influence the response are VerifyID, Sealed, MinBidShare.
+The covarities that significantly influence the response are VerifyID, Sealed and MinBidShare.
 
-## b
+## b)
 We implemented the log posterior method for the Poisson model. This produced similar results to what we got with glm.
 The result can be shown in the following table.
 
@@ -39,12 +39,124 @@ options(xtable.comment = FALSE)
 print(xtable(t(as.matrix(opt_coefs)), caption='Coefficients for optim', digits=c(4)), type='latex')
 ```
 
-## c
+## c)
+We implemented a general random walk-metropolis alhorithm and used it with our log-Poission-Posterior function. With 1000 draws the theta converges as shown in Figure 1.
+
+``` {r results='asis', echo=FALSE}
+library(xtable)
+opt_coefs = c(1.06705377195354, -0.0154153641508273, -0.403839085501093,  0.441355909460263, -0.0505682910972162,
+-0.226811909863865,  0.0700257262313936,  -0.117157288847477,  -1.89494590888938)
+names(opt_coefs) = names(glm_coefs)
+
+options(xtable.comment = FALSE)
+print(xtable(t(as.matrix(opt_coefs)), caption='Coefficients for optim', digits=c(4)), type='latex')
+```
+
+![Convergence of $\theta$](plots/convergence.pdf)
+
+## d)
+Using the MCMC from above the probability for k number of bids are presented in Figure 2.
+As shown in the Figure, the probability of 0 bids are 35.6 %.
+
+![Bid Predictions](plots/femkrona.pdf)
+
+
 
 $\pagebreak$
 
 # Appendix - Code for the assignment
 
 ```{r, echo=TRUE, eval=FALSE}
+require('MASS')
+require('geoR')
+require('mvtnorm')
 
+ebay = read.table('eBayNumberOfBidderData.dat', header = TRUE)
+X = as.matrix(ebay[,-1])
+Y = ebay[,1]
+
+nFeats = ncol(X)
+nObs = nrow(X)
+
+# a
+glmModel = glm(nBids ~ 0 + ., data=ebay, family=poisson)
+coefs = glmModel$coefficients
+coefs
+
+# b
+sigma2_0 = 100 * solve(t(X) %*% X)
+mu_0 = rep(0, nFeats)
+
+beta_prior = mvrnorm(n=1, mu=mu_0, Sigma=sigma2_0)
+
+# Calculate the posterior for the poisson model
+logPostPoi = function(betas, y, X) {
+  yPred = as.matrix(X) %*% betas
+  lambda = exp(yPred)
+  
+  logLike = sum(log(exp(-lambda) * lambda^y / factorial(y)))
+  logPrior = dmvnorm(betas, mu_0, sigma2_0, log=TRUE);
+  
+  # add the log prior and log-likelihood together to get log posterior
+  return(logLike + logPrior)
+}
+
+initValues = rep(0, nFeats)
+optimResults = optim(initValues,
+                     logPostPoi, y=Y, X=X,
+                     method=c('BFGS'), control=list(fnscale=-1), hessian=TRUE)
+
+postMode = optimResults$par
+postCov = -solve(optimResults$hessian)
+approxPostStd = sqrt(diag(postCov)/nFeats)
+postMode
+
+# c
+metroDraw = function(logPostFunc, thetas, sigma, c_tilde, ...) {
+  draws = 1000
+  result_theta = matrix(0, draws, nFeats)
+  mean_conv = matrix(0, draws, nFeats)
+  thetas_c = thetas
+  prob = c()
+  for(i in 1:draws){
+    thetas_p = (mvrnorm(1, thetas, c_tilde*sigma))
+    alpha = min(1, exp(logPostFunc(thetas_p, ...) - logPostFunc(thetas_c, ...)))
+    prob = c(prob, alpha)
+    # Update with probability alpha
+    update = sample(c(TRUE, FALSE), 1, prob=c(alpha, 1-alpha))
+    if(update)
+      thetas_c = thetas_p
+    
+    result_theta[i,] = thetas_c
+    
+    if (i > 1)
+      mean_conv[i,] = colMeans(result_theta[1:i,])
+  }
+  print(paste('Mean of alpha:', mean(prob)))
+  return (mean_conv)
+}
+
+c_tilde = 1.2
+thetas = metroDraw(logPostPoi, thetas=postMode, sigma=postCov, c_tilde=c_tilde, y=Y, X=X)
+
+pdf('plots/convergence.pdf')
+  par(mfrow=c(3,3))
+  for(i in 1:nFeats) {
+    plot(thetas[,i], type='l', col=rainbow(nFeats)[i], xlab='Samples', ylab=colnames(X)[i])
+  }
+dev.off()
+
+# d
+optTheta = thetas[nrow(thetas),]
+femkrona_1972 = c(1, 1, 1, 1, 0, 0, 0, 1, 0.5)
+names(femkrona_1972) = colnames(X)
+lambda = exp(femkrona_1972%*%optTheta)
+
+xGrid = 0:5
+xAxis = paste(xGrid, ': ', round(100*dpois(xGrid, lambda), 1), '%', sep='')
+
+pdf('plots/femkrona.pdf')
+  barloc = barplot(dpois(xGrid, lambda), xaxt='n', col='dodgerblue', xlab='Number of bids + probability', ylab='Probability')
+  axis(side=1, at=barloc, labels = xAxis)
+dev.off()
 ```

@@ -85,10 +85,6 @@ lambda = exp(femkrona_1972%*%optTheta)
 
 xGrid = 0:5
 xAxis = paste(xGrid, ': ', round(100*dpois(xGrid, lambda), 1), '%', sep='')
-xAxis = paste(round(100*dpois(xGrid, lambda), 1), '%', sep='')
-
-#plot(xGrid, dpois(xGrid, lambda), cex=1, pch=20, xlab='k', ylab='P(x=k)', col='dodgerblue', xaxt='n')
-#axis(side=1, at =c(xGrid), labels = xAxis)
 
 pdf('plots/femkrona.pdf')
   barloc = barplot(dpois(xGrid, lambda), xaxt='n', col='dodgerblue', xlab='Number of bids + probability', ylab='Probability')
