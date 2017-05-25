@@ -53,7 +53,7 @@ beta_prior = as.matrix(rnorm(n=nFeats, mean=mu_0, sd=sqrt(diag(omega_0))))
 u = uGenerator(t(beta_prior))
 
 # Necessary with 1000 iterations, draws more to get smoother histograms
-draws = 10000
+draws = 500
 # One column for each beta parameter
 result_beta = matrix(0, draws, nFeats)
 for(i in 1:draws) {

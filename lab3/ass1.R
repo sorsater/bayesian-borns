@@ -14,7 +14,7 @@ v_0 = 1
 nDraws = 2500
 
 sigma2 = rinvchisq(n=1, v_0, sigma2_0)
-
+# Lecture 7 slide 17
 result = matrix(0, nDraws, 4)
 for(i in 1:nDraws) {
   mu = rnorm(n=1, mean=mu_0, sd=sqrt(sigma2 / n))
@@ -22,12 +22,12 @@ for(i in 1:nDraws) {
   result[i,] = c(mu, sigma2, mean(result[1:i-1,1]), mean(result[1:i-1,2]))
 }
 
-pdf('plots/mu.pdf', width=imgw, height=imgh)
-plot(result[,3], type='l', xlab='Samples', ylab='Mean', col='dodgerblue')
-dev.off()
-pdf('plots/sigma.pdf', width=imgw, height=imgh)
-plot(result[,4], type='l', xlab='Samples', ylab='Variance', col='tomato')
-dev.off()
+#pdf('plots/mu.pdf', width=imgw, height=imgh)
+#plot(result[,3], type='l', xlab='Samples', ylab='Mean', col='dodgerblue')
+#dev.off()
+#pdf('plots/sigma.pdf', width=imgw, height=imgh)
+#plot(result[,4], type='l', xlab='Samples', ylab='Variance', col='tomato')
+#dev.off()
 
 # Plot mean and variance in same plot
 d = data.frame(x=seq(1, nDraws), mu=result[,3], sigma=result[,4])
@@ -82,7 +82,8 @@ rDirichlet = function(param){
   for (j in 1:nCat){
     thetaDraws[j] = rgamma(1,param[j],1)
   }
-  thetaDraws = thetaDraws/sum(thetaDraws) # Diving every column of ThetaDraws by the sum of the elements in that column.
+  # Diving every column of ThetaDraws by the sum of the elements in that column.
+  thetaDraws = thetaDraws/sum(thetaDraws) 
   return(thetaDraws)
 }
 
@@ -98,7 +99,8 @@ S2alloc = function(S){
 
 # Initial value for the MCMC
 nObs = length(x)
-S = t(rmultinom(nObs, size = 1 , prob = rep(1/nComp,nComp))) # nObs-by-nComp matrix with component allocations.
+# nObs-by-nComp matrix with component allocations.
+S = t(rmultinom(nObs, size = 1 , prob = rep(1/nComp,nComp))) 
 theta = quantile(x, probs = seq(0,1,length = nComp))
 sigma2 = rep(var(x),nComp)
 probObsInComp = rep(NA, nComp)
@@ -115,7 +117,8 @@ result_mu = matrix(0, nIter, 4)
 result_sigma = matrix(0, nIter, 4)
 for (k in 1:nIter){
   message(paste('Iteration number:',k))
-  alloc = S2alloc(S) # Just a function that converts between different representations of the group allocations
+  # Just a function that converts between different representations of the group allocations
+  alloc = S2alloc(S) 
   nAlloc = colSums(S)
   print(nAlloc)
   # Update components probabilities
@@ -135,7 +138,8 @@ for (k in 1:nIter){
   
   # Update sigma2's
   for (j in 1:nComp){
-    sigma2[j] = rScaledInvChi2(1, df = nu0[j] + nAlloc[j], scale = (nu0[j]*sigma2_0[j] + sum((x[alloc == j] - theta[j])^2))/(nu0[j] + nAlloc[j]))
+    sigma2[j] = rScaledInvChi2(1, df = nu0[j] + nAlloc[j],
+              scale = (nu0[j]*sigma2_0[j] + sum((x[alloc == j] - theta[j])^2))/(nu0[j] + nAlloc[j]))
   }
   result_sigma[k,] = c(sigma2[1], sigma2[2], mean(result_sigma[1:k-1,1]), mean(result_sigma[1:k-1,2]))
   # Update allocation
@@ -196,6 +200,22 @@ pdf('plots/muMixed.pdf', width=5, height=imgh)
        legend=c("Component 1","Component 2"), 
        col=c("dodgerblue", "tomato"), lwd = 2)
 dev.off()
+
+
+# Plot the result but with traceplot
+mcmc_mu = mcmc(result_mu[,1:2])
+ylims = c(min(mcmc_mu), max(mcmc_mu))
+pdf('plots/muMixed-trace.pdf', width=5, height=imgh)
+traceplot(mcmc_mu[,1], type='l', xlab='Samples', ylab='Mean', col='dodgerblue',
+     ylim=ylims,#ylim_mu,
+     lwd=2)
+lines(mcmc_mu[,2], col='tomato', lwd=2)
+legend("right", box.lty = 1, inset=0.02,
+       legend=c("Component 1","Component 2"), 
+       col=c("dodgerblue", "tomato"), lwd = 2)
+dev.off()
+
+
 
 pdf('plots/sigmaMixed.pdf', width=5, height=imgh)
   plot(result_sigma[,3], type='l', xlab='Samples', ylab='Variance', col='dodgerblue',

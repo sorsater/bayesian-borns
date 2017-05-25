@@ -143,8 +143,8 @@ coefs = polynomial(c(quad$coefficients))
 
 # Hyper parameters
 mu_0 = c(-10, 100, -100)
-omega_0 = diag(3)
-v_0 = n - 3
+omega_0 = diag(3) # 3 = nParas
+v_0 = n - 3 # 3 = nParas
 sigma2_0 = 5
 
 # b
@@ -190,7 +190,8 @@ pdf('plots/posterior.pdf', width=imgw, height=imgh)
          legend = c('95% interval', 'Posterior Mean','5% interval'),
          fill = cols, cex=0.65)
   axis(1, at=c(seq(0,1,length=12)), 
-       labels=c('Jan', 'Feb','Mar', 'Apr','May', 'Jun','Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'))
+       labels=c('Jan', 'Feb','Mar', 'Apr','May',
+                'Jun','Jul', 'Aug', 'Sep', 'Oct','Nov', 'Dec'), cex=0.4)
 dev.off()
 # d
 hot_day = data$time[which.max(predict(polynomial(betas_mean), data$time))]
@@ -292,3 +293,4 @@ dev.off()
 
 
 ```
+

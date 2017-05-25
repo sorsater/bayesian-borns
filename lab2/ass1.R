@@ -17,8 +17,8 @@ coefs = polynomial(c(quad$coefficients))
 
 # Hyper parameters
 mu_0 = c(-10, 100, -100)
-omega_0 = diag(3)
-v_0 = n - 3
+omega_0 = diag(3) # 3 = nParas
+v_0 = n - 3 # 3 = nParas
 sigma2_0 = 5
 
 # b

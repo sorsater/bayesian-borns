@@ -114,7 +114,9 @@ nDraws = 10000
 posterior = rbeta(nDraws, a+s, b+(n-s))
 true = pbeta(0.4, a+s, b+(n-s))
 
+# Simulated value
 message((sum(posterior <= 0.4) / length(posterior)) * 100)
+# Theoretical value
 message(round(true*100, 3))
 
 ## 1c
@@ -146,8 +148,9 @@ n = length(obs)
 tausq = sum((log(obs) - mu)^2) / (n)
 
 chiDraw = function(nDraws){
-  draws = rchisq(nDraws, n)
-  sigmasq = n * tausq / draws
+  #draws = rchisq(nDraws, n)
+  #sigmasq = n * tausq / draws
+  sigmasq = rinvchisq(nDraws, n, tausq)
   return (sigmasq)
 }
 
@@ -155,9 +158,11 @@ nDraws = 10000
 sigmasq = chiDraw(nDraws)
 
 s = seq(0, 1.5, length.out = 1000)
-exp_part = exp( ((-n*tausq) / (2*s)) ) / (s^(1+n/2))
-constant = ((tausq * n/2)^(n/2)) / (factorial(n/2-1))
-CDF = constant * exp_part
+#exp_part = exp( ((-n*tausq) / (2*s)) ) / (s^(1+n/2))
+#constant = ((tausq * n/2)^(n/2)) / (factorial(n/2-1))
+#                                    gamma(n/2)
+#PDF = constant * exp_part
+PDF = dinvchisq(s, n, tausq)
 
 pdf('plots/2-chi-squared.pdf', width=imgw, height=imgh)
   hist(sigmasq, 500, col=col1, border=col1, main='', freq=FALSE, xlim=c(0,1.5))
@@ -181,6 +186,7 @@ x_eti = quantile(G, probs=c(0.025, 0.975))
 
 # Highest Posterior Density
 dg = density(G)
+# Sort data on y decending values
 ordered_x = dg$x[order(-dg$y)]
 ordered_y = dg$y[order(-dg$y)]
   
@@ -197,11 +203,15 @@ pdf('plots/2-credible-intervals.pdf', width=imgw, height=imgh)
   plot(dg, col=col3, lwd=2, main="")
   lines(x_eti, rep(0.12, 2), col=col1, lwd=4)
   lines(x_hpd, rep(0.02, 2), col=col2, lwd=4)
+  #points(ordered_x[1:i], rep(0, i), cex=0.1)
   legend("topright", 
          legend = c("Equal Tail Interval","Highest Posterior Density"),
          fill = c(col1, col2),
          inset = 0.02)
 dev.off()
+
+
+
 ```
 
 $\pagebreak$

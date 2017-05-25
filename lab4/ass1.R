@@ -50,7 +50,7 @@ metroDraw = function(logPostFunc, thetas, sigma, c_tilde, ...) {
   thetas_c = thetas
   prob = c()
   for(i in 1:draws){
-    thetas_p = (mvrnorm(1, thetas, c_tilde*sigma))
+    thetas_p = (mvrnorm(1, thetas_c, c_tilde*sigma))
     alpha = min(1, exp(logPostFunc(thetas_p, ...) - logPostFunc(thetas_c, ...)))
     prob = c(prob, alpha)
     # Update with probability alpha
@@ -64,16 +64,18 @@ metroDraw = function(logPostFunc, thetas, sigma, c_tilde, ...) {
       mean_conv[i,] = colMeans(result_theta[1:i,])
   }
   print(paste('Mean of alpha:', mean(prob)))
-  return (mean_conv)
+  return(result_theta)
+ # return (mean_conv)
 }
 
-c_tilde = 1.2
-thetas = metroDraw(logPostPoi, thetas=postMode, sigma=postCov, c_tilde=c_tilde, y=Y, X=X)
+c_tilde = 0.6
+thetas = metroDraw(logPostPoi, thetas=rep(0, length(beta_prior)), sigma=postCov, c_tilde=c_tilde, y=Y, X=X)
 
 pdf('plots/convergence.pdf')
   par(mfrow=c(3,3))
   for(i in 1:nFeats) {
-    plot(thetas[,i], type='l', col=rainbow(nFeats)[i], xlab='Samples', ylab=colnames(X)[i])
+    #plot(thetas[,i], type='l', col=rainbow(nFeats)[i], xlab='Samples', ylab=colnames(X)[i])
+    traceplot(mcmc(thetas[,i]), col=rainbow(nFeats)[i], xlab='Samples', ylab=colnames(X)[i])
   }
 dev.off()
 

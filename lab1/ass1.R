@@ -49,7 +49,9 @@ nDraws = 10000
 posterior = rbeta(nDraws, a+s, b+(n-s))
 true = pbeta(0.4, a+s, b+(n-s))
 
+# Simulated value
 message((sum(posterior <= 0.4) / length(posterior)) * 100)
+# Theoretical value
 message(round(true*100, 3))
 
 ## 1c
