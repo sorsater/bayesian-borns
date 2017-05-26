@@ -48,12 +48,14 @@ betaGenerator = function(u, sigma2=1) {
 mu_0 = 0
 tau = 10
 mu_0 = rep(0, nFeats)
-omega_0 = tau^2 * diag(nFeats)
+covar_0 = tau^2 * diag(nFeats)
+omega_0 = solve(covar_0)
+
 beta_prior = as.matrix(rnorm(n=nFeats, mean=mu_0, sd=sqrt(diag(omega_0))))
 u = uGenerator(t(beta_prior))
 
 # Necessary with 1000 iterations, draws more to get smoother histograms
-draws = 10000
+draws = 2500
 # One column for each beta parameter
 result_beta = matrix(0, draws, nFeats)
 for(i in 1:draws) {
@@ -71,7 +73,7 @@ logPostProbit = function(betas, y, X) {
   yPred = as.matrix(X) %*% betas
   
   logLike = sum(y*pnorm(yPred, log.p = TRUE) + (1-y)*pnorm(yPred, log.p = TRUE, lower.tail = FALSE))
-  logPrior = dmvnorm(betas, mu_0, omega_0, log=TRUE);
+  logPrior = dmvnorm(betas, mu_0, covar_0, log=TRUE);
   
   # add the log prior and log-likelihood together to get log posterior
   return(logLike + logPrior)
@@ -85,7 +87,7 @@ optimResults = optim(initValues,
 
 postMode = optimResults$par
 postCov = -solve(optimResults$hessian)
-approxPostStd = sqrt(diag(postCov)/nFeats)
+approxPostStd = sqrt(diag(postCov))
 
 performance(postMode)
 
