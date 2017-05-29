@@ -67,128 +67,99 @@ $\pagebreak$
 # Appendix - Code for the assignment
 
 ```{r, echo=TRUE, eval=FALSE}
-require('msm')
+require('MASS')
+require('geoR')
 require('mvtnorm')
 
-data = read.table('WomenWork.dat', header=TRUE)
-Y = data$Work
-X = as.matrix(data[,-data$Work])
-nObs = nrow(X)
+ebay = read.table('eBayNumberOfBidderData.dat', header = TRUE)
+X = as.matrix(ebay[,-1])
+Y = ebay[,1]
+
 nFeats = ncol(X)
+nObs = nrow(X)
 
-# Calculate the accuracy of the beta values
-performance = function(betas){
-  y_hat = as.vector(X %*% betas)
-  y_hat = sign(y_hat)
-  y_hat[y_hat==-1] = 0
-  
-  print(table(y_hat, Y))
-  print(mean(y_hat != Y))
-}
+# a
+glmModel = glm(nBids ~ 0 + ., data=ebay, family=poisson)
+coefs = glmModel$coefficients
+coefs
 
-uGenerator = function(betas) {
-  curMean = X %*% t(betas)
-  u = rep(0, nObs)
-  for(i in 1:nObs){
-    # Define bounds = (lower, upper)
-    if(Y[i] == 0){
-      bounds = c(-Inf, 0)
-    }else{
-      bounds = c(0, Inf)
-    }
-    u[i] = rtnorm(n=1, mean=curMean[i], sd=1, lower=bounds[1], upper=bounds[2])
-  }
-  return(u)
-}
-
-# From the given u, draw new beta-values
-betaGenerator = function(u, sigma2=1) {
-  # From lecture 5, slide 8
-  XtX = t(X) %*% X
-  beta_hat = solve(XtX) %*% t(X) %*% as.matrix(u)
-  mu_n = solve(XtX + omega_0) %*% (XtX %*% beta_hat + omega_0 %*% mu_0)
-  omega_n = XtX + omega_0
-  
-  beta = rmvnorm(n=1, mean=mu_n, sigma=(sigma2*solve(omega_n)))
-  return (beta)
-}
-
-# Initial values
-mu_0 = 0
-tau = 10
+# b
+sigma2_0 = 100 * solve(t(X) %*% X)
 mu_0 = rep(0, nFeats)
-omega_0 = tau^2 * diag(nFeats)
-beta_prior = as.matrix(rnorm(n=nFeats, mean=mu_0, sd=sqrt(diag(omega_0))))
-u = uGenerator(t(beta_prior))
 
-# Necessary with 1000 iterations, draws more to get smoother histograms
-draws = 10000
-# One column for each beta parameter
-result_beta = matrix(0, draws, nFeats)
-for(i in 1:draws) {
-  print(i)
-  beta = betaGenerator(u)
-  u = uGenerator(beta)
-  result_beta[i,] = beta
-}
+beta_prior = mvrnorm(n=1, mu=mu_0, Sigma=sigma2_0)
 
-performance(colMeans(result_beta))
-
-# c
-
-logPostProbit = function(betas, y, X) {
+# Calculate the posterior for the poisson model
+logPostPoi = function(betas, y, X) {
   yPred = as.matrix(X) %*% betas
+  lambda = exp(yPred)
   
-  logLike = sum(y*pnorm(yPred, log.p = TRUE) + (1-y)*pnorm(yPred, log.p = TRUE, lower.tail = FALSE))
-  logPrior = dmvnorm(betas, mu_0, omega_0, log=TRUE);
+  logLike = sum(log(exp(-lambda) * lambda^y / factorial(y)))
+  logPrior = dmvnorm(betas, mu_0, sigma2_0, log=TRUE);
   
   # add the log prior and log-likelihood together to get log posterior
   return(logLike + logPrior)
-  
 }
 
 initValues = rep(0, nFeats)
 optimResults = optim(initValues,
-                     logPostProbit, y=Y, X=X,
+                     logPostPoi, y=Y, X=X,
                      method=c('BFGS'), control=list(fnscale=-1), hessian=TRUE)
 
 postMode = optimResults$par
 postCov = -solve(optimResults$hessian)
 approxPostStd = sqrt(diag(postCov)/nFeats)
+postMode
 
-performance(postMode)
+# c
+metroDraw = function(logPostFunc, thetas, sigma, c_tilde, ...) {
+  draws = 1000
+  result_theta = matrix(0, draws, nFeats)
+  mean_conv = matrix(0, draws, nFeats)
+  thetas_c = thetas
+  prob = c()
+  for(i in 1:draws){
+    thetas_p = (mvrnorm(1, thetas_c, c_tilde*sigma))
+    alpha = min(1, exp(logPostFunc(thetas_p, ...) - logPostFunc(thetas_c, ...)))
+    prob = c(prob, alpha)
+    # Update with probability alpha
+    update = sample(c(TRUE, FALSE), 1, prob=c(alpha, 1-alpha))
+    if(update)
+      thetas_c = thetas_p
+    
+    result_theta[i,] = thetas_c
+    
+    if (i > 1)
+      mean_conv[i,] = colMeans(result_theta[1:i,])
+  }
+  print(paste('Mean of alpha:', mean(prob)))
+  return(result_theta)
+ # return (mean_conv)
+}
 
-pdf('plots/betas.pdf')
-  par(mfrow=c(4,2))
+c_tilde = 0.6
+thetas = metroDraw(logPostPoi, thetas=rep(0, length(beta_prior)), sigma=postCov, c_tilde=c_tilde, y=Y, X=X)
+
+pdf('plots/convergence.pdf')
+  par(mfrow=c(3,3))
   for(i in 1:nFeats) {
-    mean = postMode[i]
-    sd = approxPostStd[i]
-  
-    # Remove outliers. (2 < x < 98) %
-    draws = result_beta[,i]
-    threshold = 0.02
-    bounds = quantile(draws, probs=c(threshold, 1 - threshold))
-    draws = draws[draws > bounds[1]]
-    trimmed = draws[draws < bounds[2]]
-    
-    # Toggle to include/exclude outliers
-    values = result_beta[,i]
-    values = trimmed
-    
-    xRange = c(values, mean + sd * 4, mean - sd * 4)
-    betaGrid = seq(min(xRange), max(xRange), length=1000)
-    
-    gibbs_density = hist(values, breaks=50, plot=FALSE)
-    approx_density = dnorm(betaGrid, mean=mean, sd=sd)
-    
-    yMax = max(c(approx_density, gibbs_density$density))
-    
-    plot(gibbs_density, freq=FALSE, col='dodgerblue', border='dodgerblue',
-         xlim=c(min(betaGrid), max(betaGrid)), 
-         ylim=c(0, yMax),
-         xlab=substitute(beta[idx], list(idx=i)),
-         main=colnames(X)[i])
-    lines(betaGrid, approx_density, col='tomato', lwd=2)
+    #plot(thetas[,i], type='l', col=rainbow(nFeats)[i], xlab='Samples', ylab=colnames(X)[i])
+    traceplot(mcmc(thetas[,i]), col=rainbow(nFeats)[i], xlab='Samples', ylab=colnames(X)[i])
   }
 dev.off()
+
+# d
+optTheta = thetas[nrow(thetas),]
+femkrona_1972 = c(1, 1, 1, 1, 0, 0, 0, 1, 0.5)
+names(femkrona_1972) = colnames(X)
+lambda = exp(femkrona_1972%*%optTheta)
+
+xGrid = 0:5
+xAxis = paste(xGrid, ': ', round(100*dpois(xGrid, lambda), 1), '%', sep='')
+
+pdf('plots/femkrona.pdf')
+  barloc = barplot(dpois(xGrid, lambda), xaxt='n', col='dodgerblue', xlab='Number of bids + probability', ylab='Probability')
+  axis(side=1, at=barloc, labels = xAxis)
+dev.off()
+
 ```
